@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horario semanal - Arena de temas</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#7c3aed">
+<style>
+  :root {
+    --bg1: #667eea; --bg2: #764ba2; --bg3: #f093fb; --bg4: #4facfe;
+    --card-bg: rgba(255,255,255,0.55);
+    --card-border: rgba(255,255,255,0.65);
+    --text: #211f3d;
+    --text-muted: #5b5f77;
+    --shadow: 0 10px 34px rgba(31,38,51,0.18);
+    --radius-lg: 22px; --radius-md: 16px; --radius-sm: 10px;
+    --accent: #7c3aed; --accent2: #ec4899;
+    --danger: #ef4444; --danger2: #f87171;
+    --input-bg: rgba(255,255,255,0.7);
+  }
+  [data-theme="dark"] {
+    --bg1: #0f0c29; --bg2: #24243e; --bg3: #302b63; --bg4: #1b1836;
+    --card-bg: rgba(30,28,54,0.55);
+    --card-border: rgba(255,255,255,0.14);
+    --text: #f3f2fb;
+    --text-muted: #b7b5d6;
+    --shadow: 0 10px 34px rgba(0,0,0,0.5);
+    --input-bg: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+    margin: 0; padding: 24px; color: var(--text); min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3), var(--bg4));
+    background-size: 400% 400%;
+    animation: bgShift 22s ease infinite;
+    transition: color 0.3s;
+  }
+  @keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .wrap { max-width: 1680px; margin: 0 auto; }
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 260px;
+    grid-template-areas: "left main right";
+    gap: 18px; align-items: start;
+  }
+  .sidebar {
+    position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;
+    display: flex; flex-direction: column; gap: 18px; padding-right: 4px;
+  }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.4); border-radius: 999px; }
+  .sidebar-left { grid-area: left; }
+  .sidebar-right { grid-area: right; }
+  .main { min-width: 0; grid-area: main; }
+  @media (max-width: 1400px) {
+    .layout { grid-template-columns: 260px 1fr; grid-template-areas: "left main" "right main"; }
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; grid-template-areas: "left" "main" "right"; }
+    .sidebar { position: static; max-height: none; }
+  }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  h1 { font-size: 24px; margin: 0; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.25); letter-spacing: 0.3px; }
+  h1 .brush { display: inline-block; animation: wiggle 3s ease-in-out infinite; }
+  @keyframes wiggle { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-12deg)} 75%{transform:rotate(12deg)} }
+  .card {
+    background: var(--card-bg); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--card-border); border-radius: var(--radius-lg); box-shadow: var(--shadow);
+    padding: 18px 20px; margin-bottom: 18px; transition: background 0.3s, border-color 0.3s;
+  }
+  .toggle-switch {
+    position: relative; width: 58px; height: 30px; border-radius: 999px;
+    background: linear-gradient(135deg, #cbd5ff, #a5b4fc); cursor: pointer; flex-shrink: 0;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.15); transition: background 0.3s;
+  }
+  [data-theme="dark"] .toggle-switch { background: linear-gradient(135deg, #312e81, #1e1b4b); }
+  .toggle-switch .knob {
+    position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+    transition: left 0.3s cubic-bezier(.68,-0.55,.27,1.55);
+  }
+  [data-theme="dark"] .toggle-switch .knob { left: 31px; }
+  .view-switcher { display: flex; gap: 6px; background: var(--card-bg); backdrop-filter: blur(18px) saturate(160%); border: 1px solid var(--card-border); padding: 5px; border-radius: 999px; }
+  .view-switcher button.view-btn { background: transparent; color: var(--text); box-shadow: none; padding: 8px 16px; }
+  .view-switcher button.view-btn.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+  .section-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted);
+    margin: 0 0 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .badge-pill {
+    margin-left: auto; font-size: 11px; background: var(--input-bg); padding: 3px 10px; border-radius: 999px;
+    text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--text);
+  }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .toolbar label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+  .toolbar input[type="text"], .toolbar input[type="number"] {
+    padding: 9px 14px; border: 1px solid var(--card-border); border-radius: 999px; font-size: 13px; width: 160px;
+    background: var(--input-bg); color: var(--text); outline: none; transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .toolbar input[type="number"] { width: 68px; }
+  .toolbar input[type="text"]:focus, .toolbar input[type="number"]:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.35); transform: translateY(-1px); }
+  .toolbar input[type="color"] {
+    width: 42px; height: 38px; border: 2px solid var(--card-border); border-radius: 12px; padding: 0; cursor: pointer;
+    background: none; transition: transform 0.15s;
+  }
+  .toolbar input[type="color"]:hover { transform: scale(1.08) rotate(-4deg); }
+  button, .btn-file label {
+    font-family: inherit; border: none; border-radius: 999px; font-size: 13px; font-weight: 700; padding: 10px 18px;
+    cursor: pointer; color: #fff; display: inline-flex; align-items: center; gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  button:hover, .btn-file label:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.08); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+  button:active, .btn-file label:active { transform: translateY(0) scale(0.94); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .btn-add { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .btn-clear { background: linear-gradient(135deg, var(--danger2), var(--danger)); }
+  .btn-export { background: linear-gradient(135deg, #34d399, #10b981); }
+  .btn-import { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+  .btn-image { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+  .btn-confirm { background: linear-gradient(135deg, var(--danger2), var(--danger)); }
+  .btn-cancel { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+  .actions-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn-file input[type="file"] { display: none; }
+  .palette { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch {
+    display: flex; align-items: center; gap: 7px; padding: 7px 12px 7px 7px; border-radius: 999px;
+    border: 2px solid transparent; cursor: pointer; background: var(--input-bg); font-size: 13px; font-weight: 600;
+    user-select: none; position: relative; transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .swatch:hover { transform: translateY(-2px) scale(1.04); }
+  .swatch.active { border-color: #fff; box-shadow: 0 0 0 3px var(--sw-color, #7c3aed), 0 6px 16px rgba(0,0,0,0.25); transform: scale(1.06); }
+  .swatch .dot { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; box-shadow: inset 0 0 4px rgba(0,0,0,0.15); }
+  .swatch .del { margin-left: 2px; color: inherit; opacity: 0.5; font-weight: bold; padding: 0 4px; border-radius: 50%; transition: opacity 0.15s, background 0.15s; }
+  .swatch .del:hover { opacity: 1; background: rgba(239,68,68,0.25); color: #ef4444; }
+  .swatch .edit-color, .stat-row .edit-color { cursor: pointer; opacity: 0.5; padding: 0 4px; border-radius: 50%; transition: opacity 0.15s, background 0.15s; flex-shrink: 0; }
+  .swatch .edit-color:hover, .stat-row .edit-color:hover { opacity: 1; background: rgba(124,58,237,0.25); }
+  .swatch.eraser .dot { background: repeating-conic-gradient(#ddd 0% 25%, #fff 0% 50%) 0 0/10px 10px; }
+  .swatch.project-swatch { border-style: dashed; border-color: rgba(255,255,255,0.4); }
+  .swatch.event-swatch .dot { background: repeating-linear-gradient(45deg, #a855f7, #a855f7 4px, #ec4899 4px, #ec4899 8px); }
+  .hint { font-size: 12.5px; color: var(--text-muted); margin: 10px 2px 0; }
+
+  .week-nav { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 20px; flex-wrap: wrap; }
+  .week-nav-btn { background: var(--input-bg); color: var(--text); box-shadow: none; padding: 8px 14px; font-size: 15px; }
+  .week-label { font-weight: 700; font-size: 14px; color: var(--text); min-width: 200px; text-align: center; }
+  .granularity-switcher { display: flex; gap: 4px; background: var(--input-bg); padding: 4px; border-radius: 999px; }
+  .gran-btn { background: transparent; color: var(--text); box-shadow: none; padding: 6px 12px; font-size: 12px; }
+  .gran-btn.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .month-day-header { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding-bottom: 4px; }
+  .month-day-cell {
+    aspect-ratio: 1; background: var(--input-bg); border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: transform 0.15s, background 0.15s;
+  }
+  .month-day-cell:hover { transform: scale(1.08); background: var(--accent); color: #fff; }
+  .month-day-cell.other-month { opacity: 0.35; }
+  .month-day-cell.is-today { outline: 3px solid #86efac; outline-offset: -2px; }
+  .month-day-cell.is-past { filter: brightness(0.65); }
+
+  /* Jar grid */
+  .jar-grid-wrap { overflow-x: auto; }
+  .jar-grid {
+    display: grid;
+    grid-template-columns: 46px repeat(7, 1fr);
+    gap: 4px;
+    min-width: 780px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .corner-cell { background: none; }
+  .day-header {
+    font-size: 12px; font-weight: 700; color: #fff; padding: 8px 4px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--day-color-a), var(--day-color-b));
+    text-shadow: 0 1px 3px rgba(0,0,0,0.25); text-align: center; cursor: pointer;
+  }
+  .day-header:hover { filter: brightness(1.1); }
+  .day-header.day-today { outline: 3px solid #86efac; outline-offset: -2px; }
+  .hour-label {
+    font-size: 10px; color: var(--text-muted); font-weight: 600; background: var(--input-bg);
+    border-radius: 6px; user-select: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .hour-label:hover { background: var(--accent); color: #fff; transform: scale(1.05); }
+  .jar {
+    position: relative; height: 30px; border-radius: 8px; cursor: crosshair;
+    background: var(--input-bg); border: 1px solid var(--card-border); overflow: hidden;
+    transition: transform 0.1s, box-shadow 0.15s;
+  }
+  .jar:hover { transform: scale(1.05); box-shadow: 0 0 0 2px #fff, 0 4px 10px rgba(0,0,0,0.3); z-index: 2; }
+  .jar.day-past { filter: brightness(0.55) saturate(0.7); }
+  .quarter-fill-band { position: absolute; top: 0; bottom: 0; overflow: hidden; pointer-events: none; }
+  .quarter-fill-band.done { opacity: 0.5; }
+  .quarter-segment-label {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 6.5px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.35); pointer-events: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1px; line-height: 1;
+  }
+  .quarter-fill-band.done .quarter-segment-label { text-decoration: line-through; }
+  .quarter-fill-band.past-quarter { filter: brightness(0.55) saturate(0.7); }
+  .quarter-hit.quarter-past-empty { background: rgba(0,0,0,0.12); }
+  [data-theme="dark"] .quarter-hit.quarter-past-empty { background: rgba(0,0,0,0.3); }
+  .quarter-hit {
+    position: absolute; top: 0; bottom: 0; cursor: crosshair; z-index: 3;
+  }
+  .quarter-hit:hover { outline: 1px solid rgba(255,255,255,0.8); outline-offset: -1px; z-index: 5; }
+  .quarter-hit:not(:last-child) { border-right: 1px dashed rgba(0,0,0,0.08); }
+  .quarter-hit.has-checklist::after {
+    content: "❗"; position: absolute; top: -1px; right: -1px; font-size: 6px; color: #ef4444; background: #fff;
+    border-radius: 50%; width: 8px; height: 8px; line-height: 8px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.4); z-index: 6;
+  }
+  canvas.pour-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
+  .jar-grid-wrap.overwrite-mode { box-shadow: 0 0 0 3px #ef4444, var(--shadow); }
+  .quarter-hit.pending-event {
+    background: rgba(168,85,247,0.4);
+    outline: 2px dashed #a855f7;
+    outline-offset: -2px;
+    z-index: 4;
+  }
+  .event-selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  #eventSelectionInfo { font-weight: 700; font-size: 13px; color: var(--text); }
+  .band-summary {
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    background: var(--input-bg); border-radius: 8px; padding: 4px 10px;
+  }
+  .band-summary .band-arrow { font-size: 10px; color: var(--text-muted); flex-shrink: 0; width: 24px; text-align: center; }
+  .band-summary .band-text { flex: 1; font-size: 10.5px; font-weight: 700; text-align: center; padding: 3px 8px; border-radius: 6px; }
+  .band-summary:hover { filter: brightness(1.08); }
+
+  /* Stats */
+  .stats-summary { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stat-pill { background: var(--input-bg); border-radius: var(--radius-md); padding: 10px 16px; text-align: center; min-width: 110px; }
+  .stat-pill .num { font-size: 22px; font-weight: 800; display: block; }
+  .stat-pill .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; }
+  .stat-row .stat-name { width: 120px; flex-shrink: 0; font-weight: 600; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-row .stat-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .stat-bar-bg { flex: 1; background: var(--input-bg); border-radius: 999px; height: 16px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.7s cubic-bezier(.2,.8,.2,1); }
+  .stat-hours { width: 48px; text-align: right; font-weight: 700; flex-shrink: 0; }
+  .stat-row .del { cursor: pointer; opacity: 0.5; font-weight: bold; padding: 0 6px; border-radius: 50%; flex-shrink: 0; transition: opacity 0.15s, background 0.15s; }
+  .stat-row .del:hover { opacity: 1; background: rgba(239,68,68,0.25); color: #ef4444; }
+  .empty-stats { color: var(--text-muted); font-size: 13px; font-style: italic; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15,12,30,0.55); display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal-box {
+    background: var(--card-bg); backdrop-filter: blur(20px) saturate(160%); border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.4); padding: 24px; max-width: 360px; width: 90%;
+    text-align: center; transform: scale(0.85) translateY(20px); transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .modal-overlay.show .modal-box { transform: scale(1) translateY(0); }
+  .modal-box p { font-size: 14px; margin: 0 0 18px; color: var(--text); }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+  .modal-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  .modal-form input[type="text"] {
+    padding: 10px 14px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--input-bg);
+    color: var(--text); font-size: 14px; text-align: center; outline: none;
+  }
+  .modal-form input[type="color"] { width: 100%; height: 42px; border-radius: 12px; border: 2px solid var(--card-border); cursor: pointer; background: none; }
+
+  /* Checklist */
+  .checklist-item { display: flex; align-items: center; gap: 8px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 6px 10px; margin-bottom: 6px; }
+  .checklist-item.done input[type="text"] { text-decoration: line-through; opacity: 0.6; }
+  .checklist-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+  .checklist-item input[type="text"] { flex: 1; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.5); color: var(--text); font-size: 12.5px; outline: none; }
+  [data-theme="dark"] .checklist-item input[type="text"] { background: rgba(255,255,255,0.06); }
+  .checklist-item .del { cursor: pointer; opacity: 0.5; font-weight: bold; padding: 0 6px; flex-shrink: 0; }
+  .checklist-item .del:hover { opacity: 1; color: #ef4444; }
+  .checklist-add-row { display: flex; gap: 8px; }
+  .checklist-add-row input[type="text"] { flex: 1; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text); font-size: 13px; outline: none; }
+
+  .shortcuts-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 12.5px; }
+  .shortcuts-table td { padding: 6px 10px; background: var(--input-bg); color: var(--text); }
+  .shortcuts-table td:first-child { border-radius: 8px 0 0 8px; font-weight: 700; white-space: nowrap; }
+  .shortcuts-table td:last-child { border-radius: 0 8px 8px 0; color: var(--text-muted); }
+
+  /* Gym */
+  .gym-session { margin-bottom: 18px; }
+  .exercise-row { display: flex; align-items: center; gap: 8px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; transition: opacity 0.2s; }
+  .exercise-row.done { opacity: 0.55; }
+  .exercise-row.done input[type="text"] { text-decoration: line-through; }
+  .exercise-row input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; accent-color: var(--accent); }
+  .exercise-row input[type="text"] { padding: 7px 10px; border-radius: 999px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.5); color: var(--text); font-size: 12.5px; outline: none; min-width: 0; }
+  [data-theme="dark"] .exercise-row input[type="text"] { background: rgba(255,255,255,0.06); }
+  .exercise-row .ex-name { flex: 2; min-width: 90px; }
+  .exercise-row .ex-series, .exercise-row .ex-reps, .exercise-row .ex-weight { flex: 1; min-width: 46px; }
+  .exercise-row .ex-notes { flex: 2; min-width: 90px; }
+  .exercise-row .del { cursor: pointer; opacity: 0.5; font-weight: bold; padding: 0 6px; flex-shrink: 0; transition: opacity 0.15s; }
+  .exercise-row .del:hover { opacity: 1; color: #ef4444; }
+  .add-exercise-btn { background: linear-gradient(135deg, #34d399, #10b981); margin-top: 4px; }
+
+  /* Notes + mobile read-only mode */
+  .mobile-banner {
+    text-align: center; font-size: 13px; font-weight: 600; color: var(--text);
+    background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(236,72,153,0.25));
+  }
+  #notesText {
+    width: 100%; min-height: 90px; resize: vertical; padding: 12px 14px; border-radius: var(--radius-md);
+    border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text);
+    font-family: inherit; font-size: 13.5px; outline: none; transition: box-shadow 0.2s;
+  }
+  #notesText:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.35); }
+  body.mobile-readonly #horarioView,
+  body.mobile-readonly #gymView {
+    pointer-events: none;
+  }
+  body.mobile-readonly .week-nav,
+  body.mobile-readonly .view-switcher {
+    pointer-events: auto;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; padding: 12px 22px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <h1><span class="brush">⏳</span> Horario semanal — arena de temas</h1>
+    <div class="view-switcher">
+      <button class="view-btn active" id="viewHorarioBtn">📅 Horario</button>
+      <button class="view-btn" id="viewGymBtn">🏋️ Gym</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="btn-add" id="shortcutsBtn" title="Ver atajos y controles">❓ Atajos</button>
+      <div class="toggle-switch" id="darkToggle" title="Modo oscuro">
+        <div class="knob" id="darkKnob">☀️</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mobile-banner" id="mobileBanner" style="display:none;">
+    👀 Modo solo lectura (móvil) — puedes ver el horario pero no editarlo. Las notas de abajo sí se pueden editar.
+  </div>
+
+  <div class="card" id="notesCard">
+    <p class="section-title">📝 Notas compartidas <span class="badge-pill" id="syncStatus">conectando…</span></p>
+    <textarea id="notesText" placeholder="Escribe aquí lo que quieras, se sincroniza entre tu móvil y tu PC..."></textarea>
+  </div>
+
+  <div id="horarioView">
+  <div class="card week-nav">
+    <div class="granularity-switcher">
+      <button class="gran-btn" id="viewMonthBtn">Mes</button>
+      <button class="gran-btn active" id="viewWeekBtn">Semana</button>
+      <button class="gran-btn" id="viewDayBtn">Día</button>
+    </div>
+    <button class="week-nav-btn" id="prevWeekBtn" title="Anterior">←</button>
+    <div class="week-label" id="weekLabel"></div>
+    <button class="btn-add" id="todayWeekBtn">Hoy</button>
+    <button class="week-nav-btn" id="nextWeekBtn" title="Siguiente">→</button>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar sidebar-left">
+      <div class="card">
+        <p class="section-title">🎨 Crear tema</p>
+        <div class="toolbar">
+          <label>Nombre:</label>
+          <input type="text" id="themeName" placeholder="Ej: Médico" maxlength="24">
+          <label>Color:</label>
+          <input type="color" id="themeColor" value="#60a5fa">
+          <button class="btn-add" id="addThemeBtn">✨ Añadir tema</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">🚀 Proyectos</p>
+        <div class="toolbar" style="margin-bottom: 14px;">
+          <label>Nombre:</label>
+          <input type="text" id="projectName" placeholder="Ej: Aprender inglés" maxlength="28">
+          <label>Color:</label>
+          <input type="color" id="projectColor" value="#22d3ee">
+          <label>Meta (h):</label>
+          <input type="number" id="projectTarget" min="1" max="500" value="20">
+          <button class="btn-add" id="addProjectBtn">🚀 Crear proyecto</button>
+        </div>
+        <div id="projectsList"></div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">⏳ Paleta de arena <span class="badge-pill" id="pourAmountLabel">30 min</span></p>
+        <div class="palette" id="palette"></div>
+        <div class="granularity-switcher" style="margin-top: 12px;">
+          <button class="gran-btn active" id="fillDownBtn" title="Al verter/borrar varios cuartos, avanza hacia abajo (más tarde)">⬇️ Hacia abajo</button>
+          <button class="gran-btn" id="fillUpBtn" title="Al verter/borrar varios cuartos, avanza hacia arriba (más temprano)">⬆️ Hacia arriba</button>
+        </div>
+        <p class="hint">Cada hora tiene 4 mini-frascos de 15 min. Clic en uno vierte desde ahí (según Q/E) · Q/E cambia cuántos cuartos · Z + tema sobrescribe · Z + Goma vacía la hora entera · Clic derecho = goma · Shift+clic tacha ese cuarto · Clic central = checklist de ese cuarto · Ctrl+N tema rápido · Con "📌 Evento" activo, clic o arrastra para ir marcando cuartos (no hace falta que sean seguidos) y confirma el nombre una sola vez</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="card event-selection-bar" id="eventSelectionBar" style="display:none;">
+        <span id="eventSelectionInfo"></span>
+        <div class="actions-row">
+          <button class="btn-add" id="confirmEventSelectionBtn">✅ Crear evento</button>
+          <button class="btn-cancel" id="cancelEventSelectionBtn">✖ Cancelar selección</button>
+        </div>
+      </div>
+      <div class="card jar-grid-wrap">
+        <div class="jar-grid" id="jarGrid"></div>
+      </div>
+      <div class="card" id="monthViewCard" style="display:none;">
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
+      <button class="btn-add" id="carryThemesBtn" style="margin-top: 4px;">➡️ Pasar temas a la semana siguiente</button>
+      <button class="btn-clear" id="clearDayBtn" style="margin-top: 4px; display:none;">🗑️ Vaciar este día</button>
+    </main>
+
+    <aside class="sidebar sidebar-right">
+      <div class="card">
+        <p class="section-title">📌 Eventos</p>
+        <div id="eventsList"></div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">⚙️ Acciones</p>
+        <div class="actions-row">
+          <button class="btn-clear" id="clearAllBtn">🗑️ Limpiar todo</button>
+          <button class="btn-export" id="exportJsonBtn">📤 Exportar JSON</button>
+          <div class="btn-file">
+            <label for="importJsonInput" class="btn-import">📥 Importar JSON</label>
+            <input type="file" id="importJsonInput" accept="application/json">
+          </div>
+          <button class="btn-image" id="exportImageBtn">🖼️ Descargar imagen</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">📊 Estadísticas</p>
+        <div class="stats-summary" id="statsSummary"></div>
+        <div id="statsList"></div>
+      </div>
+    </aside>
+  </div>
+  </div>
+
+  <div id="gymView" style="display:none;">
+    <div class="card">
+      <p class="section-title">🏋️ Rutina de Gym</p>
+      <p class="hint" style="margin: 0;">Estas sesiones se generan automáticamente de los cuartos con arena "Gym" en el Horario.</p>
+    </div>
+    <div id="gymSessions"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <p id="modalMessage">¿Seguro?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Sí, continuar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="quickThemeOverlay">
+  <div class="modal-box">
+    <p>⚡ Nuevo tema rápido</p>
+    <div class="modal-form">
+      <input type="text" id="quickThemeName" placeholder="Nombre del tema" maxlength="24">
+      <input type="color" id="quickThemeColor" value="#60a5fa">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="quickThemeCancel">Cancelar</button>
+      <button class="btn-add" id="quickThemeCreate">✨ Crear</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="eventOverlay">
+  <div class="modal-box">
+    <p>📌 Nombra tu evento puntual</p>
+    <div class="modal-form">
+      <input type="text" id="eventName" placeholder="Ej: Ver película" maxlength="28">
+      <input type="color" id="eventColor" value="#a855f7">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="eventCancel">Cancelar</button>
+      <button class="btn-add" id="eventCreate">📌 Verter evento</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="checklistOverlay">
+  <div class="modal-box" style="max-width: 400px;">
+    <p id="checklistTitle">📋 Checklist</p>
+    <div id="checklistItems" style="margin-bottom: 14px;"></div>
+    <div class="checklist-add-row">
+      <input type="text" id="checklistNewItem" placeholder="Nuevo item (ej. toalla)" maxlength="40">
+      <button class="btn-add" id="checklistAddItemBtn">+</button>
+    </div>
+    <div class="modal-actions" style="margin-top: 16px;">
+      <button class="btn-cancel" id="checklistCloseBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="shortcutsOverlay">
+  <div class="modal-box" style="max-width: 520px; text-align: left;">
+    <p style="text-align:center;">⌨️ Atajos y controles</p>
+    <table class="shortcuts-table">
+      <tr><td>Clic en un cuarto</td><td>Vierte arena desde ahí, avanzando según Q/E y la dirección elegida</td></tr>
+      <tr><td>Clic (con Goma)</td><td>Borra cuartos desde ahí, misma cantidad/dirección</td></tr>
+      <tr><td>Clic derecho</td><td>Cambia a Goma (y vuelve a tu pincel si pulsas de nuevo)</td></tr>
+      <tr><td>Shift + clic</td><td>Tacha / destacha ese cuarto de hora</td></tr>
+      <tr><td>Clic central</td><td>Abre el checklist de ese cuarto</td></tr>
+      <tr><td>Q / E</td><td>Reduce / aumenta cuántos cuartos afecta cada clic (15–60 min)</td></tr>
+      <tr><td>⬆️/⬇️ (panel)</td><td>Elige si el vertido/borrado avanza hacia horas más tempranas o tardías</td></tr>
+      <tr><td>Mantén Z + tema</td><td>Sobrescribe en vez de saltar cuartos ocupados</td></tr>
+      <tr><td>Mantén Z + Goma</td><td>Vacía la hora entera (4 cuartos) de un clic</td></tr>
+      <tr><td>Ctrl + N</td><td>Crea un tema rápido sin ir al panel lateral</td></tr>
+      <tr><td>Clic en "14:00"</td><td>Vierte esa hora en los 7 días de la semana a la vez</td></tr>
+      <tr><td>Clic en el nombre del día</td><td>Cambia a la vista Día de esa fecha</td></tr>
+      <tr><td>Clic en un bloque uniforme</td><td>Colapsa / expande esa franja de horas repetidas</td></tr>
+      <tr><td>📌 Evento: clic/arrastra</td><td>Marca cuartos (seguidos o no, incluso en otras horas/días) y confirma el nombre una sola vez para todos</td></tr>
+    </table>
+    <div class="modal-actions" style="margin-top: 16px; justify-content: center;">
+      <button class="btn-cancel" id="shortcutsCloseBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const DAY_COLORS = [
+    ["#f87171", "#ef4444"], ["#fb923c", "#f97316"], ["#fbbf24", "#f59e0b"],
+    ["#34d399", "#10b981"], ["#22d3ee", "#06b6d4"], ["#818cf8", "#6366f1"],
+    ["#e879f9", "#c026d3"]
+  ];
+  const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const MONTH_NAMES_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const STORAGE_KEY = "horarioApp";
+  const DARK_KEY = "horarioAppDark";
+  const SUPABASE_URL = "https://plbvpptcmqucmncpvjdn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYnZwcHRjbXF1Y21uY3B2amRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MjcxMzcsImV4cCI6MjA5ODQwMzEzN30.5POxyxpiPyAut0pAvGmqtoKHW1BT_J0XZZnPzXkucsk";
+  const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  let applyingRemoteUpdate = false;
+  const ERASER_ID = "__eraser__";
+  const EVENT_ID = "__event__";
+  const HOURS_PER_DAY = 24;
+  const QUARTERS_PER_DAY = 96; // 24h * 4 quarters (15 min each)
+  const POUR_STEPS = [15, 30, 45, 60]; // minutes -> 1..4 quarters
+
+  let currentWeekMonday = getMonday(new Date());
+  let currentWeekKey = formatWeekKey(currentWeekMonday);
+  let state = loadState();
+  let activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+  let savedBeforeEraser = null;
+  let overwriteMode = false;
+  let pourAmount = 30;
+  let fillForward = true; // true = hacia abajo (más tarde), false = hacia arriba (más temprano)
+  let currentChecklistKey = null;
+  let currentChecklistDay = null;
+  let currentChecklistRun = null;
+  let eventSelection = new Map(); // key "day_gq" -> {day, hour, q}
+  let eventDragActive = false;
+  let eventDragAdding = true;
+  let jarGrid = [];       // jarGrid[day][hour] = .jar container element
+  let quarterHits = [];   // quarterHits[day][hour] = [hit0, hit1, hit2, hit3]
+  let dayHeaderCells = [];
+  let rowGroups = [];     // rowGroups[hour] = [hourLabelEl, jar0..jar6]
+  let viewGranularity = "week";
+  let currentDayDate = new Date(); currentDayDate.setHours(0,0,0,0);
+  let currentMonthDate = new Date(); currentMonthDate.setDate(1); currentMonthDate.setHours(0,0,0,0);
+  let orphanCleanupQueue = [];
+
+  // ---------- Persistence ----------
+  function normalizeState(parsed) {
+    parsed.projects = parsed.projects || [];
+    parsed.gymRoutines = parsed.gymRoutines || {};
+    parsed.expandedBands = parsed.expandedBands || {};
+    parsed.notes = typeof parsed.notes === "string" ? parsed.notes : "";
+    if (!parsed.weeks) parsed.weeks = {};
+    Object.values(parsed.weeks).forEach(w => {
+      w.done = w.done || {};
+      w.events = w.events || {};
+      w.checklists = w.checklists || {};
+      if (!w.quarters) {
+        w.quarters = {};
+        // Migrate legacy "hours" (segments with minutes) into quarter slots.
+        if (w.hours) {
+          Object.keys(w.hours).forEach(hourKey => {
+            const parts = hourKey.split("_");
+            const day = Number(parts[0]), hour = Number(parts[1]);
+            const segs = w.hours[hourKey];
+            const list = Array.isArray(segs) ? segs : [];
+            let q = 0;
+            list.forEach(seg => {
+              const qCount = Math.max(1, Math.round((seg.minutes || 15) / 15));
+              for (let i = 0; i < qCount && q < 4; i++, q++) {
+                w.quarters[cellKey(day, hour * 4 + q)] = seg.id;
+              }
+            });
+          });
+        }
+      }
+      delete w.hours;
+      delete w.cells;
+    });
+    return parsed;
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.themes) return normalizeState(parsed);
+      }
+    } catch (e) {}
+    return { themes: [], projects: [], gymRoutines: {}, weeks: {}, expandedBands: {}, notes: "" };
+  }
+
+  let saveTimeout = null;
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (applyingRemoteUpdate || !sb) return;
+    clearTimeout(saveTimeout);
+    setSyncStatus("guardando…");
+    saveTimeout = setTimeout(() => {
+      sb.from("horario_state")
+        .update({ data: state, updated_at: new Date().toISOString() })
+        .eq("id", "main")
+        .then(({ error }) => {
+          setSyncStatus(error ? "error al guardar" : "sincronizado ✓");
+          if (error) console.error("Supabase save error:", error);
+        });
+    }, 700);
+  }
+
+  function setSyncStatus(text) {
+    const el = document.getElementById("syncStatus");
+    if (el) el.textContent = text;
+  }
+
+  function renderEverything() {
+    renderPalette();
+    renderAllJars();
+    updateDayHighlights();
+    renderStats();
+    renderProjects();
+    renderEventsList();
+    renderNotes();
+    if (document.getElementById("gymView").style.display !== "none") renderGymView();
+  }
+
+  async function initRemoteSync() {
+    if (!sb) { setSyncStatus("sin conexión (offline)"); return; }
+    try {
+      const { data, error } = await sb.from("horario_state").select("data").eq("id", "main").single();
+      if (error) throw error;
+      const remote = data && data.data;
+      if (remote && Object.keys(remote).length && remote.themes) {
+        applyingRemoteUpdate = true;
+        state = normalizeState(remote);
+        activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+        applyingRemoteUpdate = false;
+        renderEverything();
+      } else if (state.themes && state.themes.length) {
+        // Remote is empty but we have local data: push it up once.
+        await sb.from("horario_state").update({ data: state, updated_at: new Date().toISOString() }).eq("id", "main");
+      }
+      setSyncStatus("sincronizado ✓");
+    } catch (e) {
+      console.warn("No se pudo conectar con Supabase, usando datos locales.", e);
+      setSyncStatus("sin conexión (offline)");
+      return;
+    }
+
+    sb.channel("horario_state_changes")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "horario_state", filter: "id=eq.main" }, (payload) => {
+        const remote = payload.new && payload.new.data;
+        if (!remote || !remote.themes) return;
+        applyingRemoteUpdate = true;
+        state = normalizeState(remote);
+        if (!getBrushById(activeThemeId) && activeThemeId !== ERASER_ID && activeThemeId !== EVENT_ID) {
+          activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+        }
+        applyingRemoteUpdate = false;
+        renderEverything();
+        setSyncStatus("sincronizado ✓");
+      })
+      .subscribe();
+  }
+
+  function applyMobileReadOnly() {
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    document.body.classList.toggle("mobile-readonly", isMobile);
+    document.getElementById("mobileBanner").style.display = isMobile ? "" : "none";
+  }
+
+  function renderNotes() {
+    const textarea = document.getElementById("notesText");
+    if (document.activeElement === textarea) return; // don't clobber while typing
+    textarea.value = state.notes || "";
+  }
+  document.getElementById("notesText").addEventListener("input", (e) => {
+    state.notes = e.target.value;
+    saveState();
+  });
+
+  function uid() { return "t" + Math.random().toString(36).slice(2, 9); }
+  function cellKey(day, gq) { return day + "_" + gq; }
+  function toGQ(hour, q) { return hour * 4 + q; }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1) - day);
+    return d;
+  }
+  function addDaysToDate(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+  function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
+  function formatWeekKey(date) { return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0"); }
+  function getDayIndexInWeek(date) { const day = date.getDay(); return day === 0 ? 6 : day - 1; }
+  function formatWeekLabel(monday) {
+    const sunday = addDaysToDate(monday, 6);
+    const sameMonth = monday.getMonth() === sunday.getMonth();
+    const startStr = monday.getDate() + (sameMonth ? "" : " " + MONTH_NAMES[monday.getMonth()]);
+    const endStr = sunday.getDate() + " " + MONTH_NAMES[sunday.getMonth()] + " " + sunday.getFullYear();
+    return startStr + " – " + endStr;
+  }
+  function hourLabel(h) { return String(h).padStart(2, "0") + ":00"; }
+  function quarterLabel(gq) {
+    const h = Math.floor(gq / 4), m = (gq % 4) * 15;
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  }
+  function formatHours(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
+
+  function getWeekData(weekKey) {
+    if (!state.weeks[weekKey]) state.weeks[weekKey] = { quarters: {}, done: {}, events: {}, checklists: {} };
+    return state.weeks[weekKey];
+  }
+  function currentWeek() { return getWeekData(currentWeekKey); }
+
+  function getBrushById(id) {
+    return state.themes.find(t => t.id === id) || state.projects.find(p => p.id === id) || currentWeek().events[id] || null;
+  }
+
+  function hasChecklist(key) {
+    const cl = currentWeek().checklists;
+    return !!(cl[key] && cl[key].length);
+  }
+  function getChecklist(key) {
+    const cl = currentWeek().checklists;
+    if (!cl[key]) cl[key] = [];
+    return cl[key];
+  }
+
+  function getCellLabel(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) return words.map(w => w[0].toUpperCase()).join("").slice(0, 4);
+    const word = words[0] || "";
+    return word.length > 6 ? word.slice(0, 5) + "…" : word;
+  }
+  function textColorFor(hex) {
+    const c = hex.replace("#", "");
+    const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? "#1f2333" : "#ffffff";
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function showConfirm(message) {
+    return new Promise(resolve => {
+      const overlay = document.getElementById("modalOverlay");
+      document.getElementById("modalMessage").textContent = message;
+      overlay.classList.add("show");
+      function cleanup(result) {
+        overlay.classList.remove("show");
+        confirmBtn.removeEventListener("click", onConfirm);
+        cancelBtn.removeEventListener("click", onCancel);
+        resolve(result);
+      }
+      const confirmBtn = document.getElementById("modalConfirm");
+      const cancelBtn = document.getElementById("modalCancel");
+      function onConfirm() { cleanup(true); }
+      function onCancel() { cleanup(false); }
+      confirmBtn.addEventListener("click", onConfirm);
+      cancelBtn.addEventListener("click", onCancel);
+    });
+  }
+
+  // Opens the native color picker to edit an object's `.color` in place, live-updating via onChange.
+  function editColorFor(obj, onChange) {
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = obj.color;
+    input.style.position = "fixed";
+    input.style.left = "-9999px";
+    document.body.appendChild(input);
+    input.addEventListener("input", () => {
+      obj.color = input.value;
+      saveState();
+      onChange();
+    });
+    const cleanup = () => { saveState(); onChange(); setTimeout(() => input.remove(), 200); };
+    input.addEventListener("change", cleanup);
+    input.addEventListener("blur", cleanup);
+    input.click();
+  }
+
+  // ---------- Dark mode ----------
+  function applyDarkMode(isDark) {
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    document.getElementById("darkKnob").textContent = isDark ? "🌙" : "☀️";
+    localStorage.setItem(DARK_KEY, isDark ? "1" : "0");
+  }
+  document.getElementById("shortcutsBtn").addEventListener("click", () => {
+    document.getElementById("shortcutsOverlay").classList.add("show");
+  });
+  document.getElementById("shortcutsCloseBtn").addEventListener("click", () => {
+    document.getElementById("shortcutsOverlay").classList.remove("show");
+  });
+  document.getElementById("darkToggle").addEventListener("click", () => {
+    applyDarkMode(document.documentElement.getAttribute("data-theme") !== "dark");
+  });
+  applyDarkMode(localStorage.getItem(DARK_KEY) === "1");
+
+  // ---------- Palette ----------
+  function renderPalette() {
+    const palette = document.getElementById("palette");
+    palette.innerHTML = "";
+
+    const eraser = document.createElement("div");
+    eraser.className = "swatch eraser" + (activeThemeId === ERASER_ID ? " active" : "");
+    eraser.style.setProperty("--sw-color", "#9ca3af");
+    eraser.innerHTML = '<span class="dot"></span><span>Goma</span>';
+    eraser.addEventListener("click", () => { activeThemeId = ERASER_ID; renderPalette(); });
+    palette.appendChild(eraser);
+
+    const eventSwatch = document.createElement("div");
+    eventSwatch.className = "swatch event-swatch" + (activeThemeId === EVENT_ID ? " active" : "");
+    eventSwatch.style.setProperty("--sw-color", "#a855f7");
+    eventSwatch.innerHTML = '<span class="dot"></span><span>📌 Evento</span>';
+    eventSwatch.addEventListener("click", () => { activeThemeId = EVENT_ID; renderPalette(); });
+    palette.appendChild(eventSwatch);
+
+    state.themes.forEach(theme => {
+      const el = document.createElement("div");
+      el.className = "swatch" + (activeThemeId === theme.id ? " active" : "");
+      el.style.setProperty("--sw-color", theme.color);
+      el.innerHTML = `<span class="dot" style="background:${theme.color}"></span><span>${escapeHtml(theme.name)}</span><span class="edit-color" title="Cambiar color">🖊️</span><span class="del" title="Eliminar tema">×</span>`;
+      el.addEventListener("click", (e) => {
+        if (e.target.classList.contains("del") || e.target.classList.contains("edit-color")) return;
+        activeThemeId = theme.id;
+        renderPalette();
+      });
+      el.querySelector(".edit-color").addEventListener("click", (e) => {
+        e.stopPropagation();
+        editColorFor(theme, () => { renderPalette(); renderAllJars(); renderStats(); });
+      });
+      el.querySelector(".del").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const ok = await showConfirm(`¿Eliminar el tema "${theme.name}"? Se borrará de todos los cuartos donde aparezca.`);
+        if (!ok) return;
+        state.themes = state.themes.filter(t => t.id !== theme.id);
+        removeIdFromAllWeeks(theme.id);
+        if (activeThemeId === theme.id) activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+        saveState();
+        renderPalette();
+        renderAllJars();
+        renderStats();
+        showToast(`Tema "${theme.name}" eliminado`);
+      });
+      palette.appendChild(el);
+    });
+
+    state.projects.forEach(project => {
+      const el = document.createElement("div");
+      el.className = "swatch project-swatch" + (activeThemeId === project.id ? " active" : "");
+      el.style.setProperty("--sw-color", project.color);
+      el.innerHTML = `<span class="dot" style="background:${project.color}"></span><span>🎯 ${escapeHtml(project.name)}</span>`;
+      el.addEventListener("click", () => { activeThemeId = project.id; renderPalette(); });
+      palette.appendChild(el);
+    });
+  }
+
+  // ---------- Quarter helpers ----------
+  function removeIdFromAllWeeks(id) {
+    Object.values(state.weeks).forEach(w => {
+      Object.keys(w.quarters).forEach(k => { if (w.quarters[k] === id) delete w.quarters[k]; });
+    });
+  }
+  function isIdStillUsed(id, quartersObj) {
+    return Object.values(quartersObj).some(v => v === id);
+  }
+  function cleanupOrphanEventLater(id) { orphanCleanupQueue.push(id); }
+  function flushOrphanCleanup() {
+    const week = currentWeek();
+    orphanCleanupQueue.forEach(id => {
+      if (id && week.events[id] && !isIdStillUsed(id, week.quarters)) delete week.events[id];
+    });
+    orphanCleanupQueue = [];
+  }
+
+  // ---------- Pour amount (Q/E) ----------
+  function adjustPourAmount(delta) {
+    let idx = POUR_STEPS.indexOf(pourAmount);
+    if (idx === -1) idx = 1;
+    idx = Math.min(POUR_STEPS.length - 1, Math.max(0, idx + delta));
+    pourAmount = POUR_STEPS[idx];
+    const label = document.getElementById("pourAmountLabel");
+    if (label) label.textContent = pourAmount + " min";
+  }
+
+  // ---------- Grid building ----------
+  function buildGrid() {
+    const grid = document.getElementById("jarGrid");
+    grid.innerHTML = "";
+    jarGrid = DAYS.map(() => []);
+    quarterHits = DAYS.map(() => []);
+    dayHeaderCells = [];
+    rowGroups = [];
+
+    const corner = document.createElement("div");
+    corner.className = "corner-cell";
+    grid.appendChild(corner);
+    DAYS.forEach((day, i) => {
+      const dh = document.createElement("div");
+      dh.className = "day-header";
+      dh.textContent = day;
+      dh.style.setProperty("--day-color-a", DAY_COLORS[i][0]);
+      dh.style.setProperty("--day-color-b", DAY_COLORS[i][1]);
+      dh.title = "Clic para ver solo este día";
+      dh.addEventListener("click", () => { setGranularity("day"); goToDay(addDaysToDate(currentWeekMonday, i)); });
+      grid.appendChild(dh);
+      dayHeaderCells.push(dh);
+    });
+
+    for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
+      const rowEls = [];
+      const label = document.createElement("div");
+      label.className = "hour-label";
+      label.dataset.hour = hour;
+      label.title = "Verter en esta hora, toda la semana";
+      label.textContent = hourLabel(hour);
+      grid.appendChild(label);
+      rowEls.push(label);
+
+      DAYS.forEach((day, dayIdx) => {
+        const jar = document.createElement("div");
+        jar.className = "jar";
+        jar.dataset.day = dayIdx;
+        jar.dataset.hour = hour;
+        const hits = [];
+        for (let q = 0; q < 4; q++) {
+          const hit = document.createElement("div");
+          hit.className = "quarter-hit";
+          hit.style.left = (q * 25) + "%";
+          hit.style.width = "25%";
+          hit.dataset.day = dayIdx;
+          hit.dataset.hour = hour;
+          hit.dataset.quarter = q;
+          jar.appendChild(hit);
+          hits.push(hit);
+        }
+        grid.appendChild(jar);
+        jarGrid[dayIdx][hour] = jar;
+        quarterHits[dayIdx][hour] = hits;
+        rowEls.push(jar);
+      });
+      rowGroups[hour] = rowEls;
+    }
+  }
+
+  // ---------- Rendering a single hour's jar ----------
+  function renderJar(day, hour) {
+    const jar = jarGrid[day] && jarGrid[day][hour];
+    if (!jar) return;
+    const week = currentWeek();
+    jar.querySelectorAll(".quarter-fill-band").forEach(el => el.remove());
+
+    const todayInfo = getTodayInfo();
+    const quarters = [];
+    for (let q = 0; q < 4; q++) {
+      const gq = toGQ(hour, q);
+      const key = cellKey(day, gq);
+      const id = week.quarters[key];
+      const isPast = !!(todayInfo && day === todayInfo.dayIndex && gq < todayInfo.nowGQ);
+      const checklistFlag = id ? hasChecklist(cellKey(day, findContiguousRun(day, gq, id).start)) : false;
+      quarters.push({ q, id, done: !!week.done[key], hasChecklist: checklistFlag, past: isPast });
+    }
+
+    // group consecutive quarters that share id, done-state AND past-state into visual bands
+    const names = [];
+    let i = 0;
+    while (i < 4) {
+      const cur = quarters[i];
+      if (!cur.id) { i++; continue; }
+      let j = i + 1;
+      while (j < 4 && quarters[j].id === cur.id && quarters[j].done === cur.done && quarters[j].past === cur.past) j++;
+      const count = j - i;
+      const brush = getBrushById(cur.id);
+      if (brush) {
+        const band = document.createElement("div");
+        band.className = "quarter-fill-band" + (cur.done ? " done" : "") + (cur.past ? " past-quarter" : "");
+        band.style.left = (i * 25) + "%";
+        band.style.width = (count * 25) + "%";
+        band.style.background = brush.color;
+        const label = document.createElement("span");
+        label.className = "quarter-segment-label";
+        label.style.color = textColorFor(brush.color);
+        label.textContent = count === 1 ? (brush.name.trim()[0] || "").toUpperCase() : getCellLabel(brush.name);
+        band.appendChild(label);
+        jar.appendChild(band);
+        names.push(`${brush.name} ${quarterLabel(toGQ(hour, i))}`);
+      }
+      i = j;
+    }
+
+    // update hit-zones (checklist badge + empty-but-past dimming)
+    quarterHits[day][hour].forEach((hit, q) => {
+      hit.classList.toggle("has-checklist", quarters[q].hasChecklist);
+      hit.classList.toggle("quarter-past-empty", quarters[q].past && !quarters[q].id);
+    });
+
+    jar.title = names.join(" + ");
+  }
+
+  function renderAllJars() {
+    for (let day = 0; day < DAYS.length; day++) {
+      for (let hour = 0; hour < HOURS_PER_DAY; hour++) renderJar(day, hour);
+    }
+  }
+
+  // ---------- Pour / drain physics animation ----------
+  function animatePour(jar, hour, day, color, fromQ, toQ) {
+    const w = jar.clientWidth || 100, h = jar.clientHeight || 30;
+    const canvas = document.createElement("canvas");
+    canvas.className = "pour-canvas";
+    canvas.width = w; canvas.height = h;
+    jar.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    const bandLeft = w * (Math.min(fromQ, toQ) / 4);
+    const bandRight = w * ((Math.max(fromQ, toQ) + 1) / 4);
+    const grainCount = Math.max(10, Math.min(60, (Math.abs(toQ - fromQ) + 1) * 18));
+    const grains = [];
+    for (let i = 0; i < grainCount; i++) {
+      grains.push({
+        x: bandLeft + Math.random() * Math.max(1, bandRight - bandLeft),
+        y: -Math.random() * h,
+        targetY: Math.random() * h,
+        vy: 0,
+        delay: Math.random() * 180,
+        size: 1.6 + Math.random()
+      });
+    }
+    const start = performance.now();
+    function frame(t) {
+      const elapsed = t - start;
+      ctx.clearRect(0, 0, w, h);
+      let allDone = true;
+      grains.forEach(g => {
+        if (elapsed < g.delay) { allDone = false; return; }
+        if (g.y < g.targetY) {
+          g.vy += 0.85;
+          g.y = Math.min(g.targetY, g.y + g.vy);
+          allDone = false;
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(g.x, Math.max(0, g.y), g.size, g.size);
+      });
+      if (!allDone) requestAnimationFrame(frame);
+      else { canvas.remove(); renderJar(day, hour); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function animateDrain(jar, hour, day, color, fromQ, toQ) {
+    const w = jar.clientWidth || 100, h = jar.clientHeight || 30;
+    const canvas = document.createElement("canvas");
+    canvas.className = "pour-canvas";
+    canvas.width = w; canvas.height = h;
+    jar.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    const bandLeft = w * (Math.min(fromQ, toQ) / 4);
+    const bandRight = w * ((Math.max(fromQ, toQ) + 1) / 4);
+    const grainCount = Math.max(8, Math.min(50, (Math.abs(toQ - fromQ) + 1) * 14));
+    const grains = [];
+    for (let i = 0; i < grainCount; i++) {
+      grains.push({
+        x: bandLeft + Math.random() * Math.max(1, bandRight - bandLeft),
+        y: Math.random() * h,
+        vy: 0,
+        delay: Math.random() * 140,
+        size: 1.6 + Math.random(),
+        exitY: -6 - Math.random() * 8
+      });
+    }
+    const start = performance.now();
+    function frame(t) {
+      const elapsed = t - start;
+      ctx.clearRect(0, 0, w, h);
+      let allDone = true;
+      grains.forEach(g => {
+        if (elapsed < g.delay) { allDone = false; return; }
+        if (g.y > g.exitY) { g.vy -= 0.7; g.y += g.vy; allDone = false; }
+        ctx.globalAlpha = Math.min(1, Math.max(0, g.y / h + 0.3));
+        ctx.fillStyle = color;
+        ctx.fillRect(g.x, g.y, g.size, g.size);
+        ctx.globalAlpha = 1;
+      });
+      if (!allDone) requestAnimationFrame(frame);
+      else { canvas.remove(); renderJar(day, hour); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Pouring / erasing within one hour (4 quarters) ----------
+  function quartersInDirection(startQ, count) {
+    const qs = [];
+    for (let i = 0; i < count; i++) {
+      const q = fillForward ? startQ + i : startQ - i;
+      if (q < 0 || q > 3) break;
+      qs.push(q);
+    }
+    return qs;
+  }
+
+  function pourIntoHour(day, hour, startQ, id, playAnim) {
+    const week = currentWeek();
+    const wantCount = Math.round(pourAmount / 15);
+    const candidateQs = quartersInDirection(startQ, wantCount);
+    const filled = [];
+    candidateQs.forEach(q => {
+      const gq = toGQ(hour, q);
+      const key = cellKey(day, gq);
+      const prevId = week.quarters[key];
+      if (!prevId || overwriteMode) {
+        if (prevId && prevId !== id) cleanupOrphanEventLater(prevId);
+        week.quarters[key] = id;
+        delete week.done[key];
+        delete week.checklists[key];
+        filled.push(q);
+      }
+    });
+    renderJar(day, hour);
+    if (playAnim && filled.length) {
+      const brush = getBrushById(id);
+      if (brush) animatePour(jarGrid[day][hour], hour, day, brush.color, filled[0], filled[filled.length - 1]);
+    }
+    return filled.length;
+  }
+
+  function eraseFromHour(day, hour, startQ, playAnim) {
+    const week = currentWeek();
+    const wantCount = Math.round(pourAmount / 15);
+    const candidateQs = quartersInDirection(startQ, wantCount);
+    const removedQs = [];
+    let lastColor = null;
+    candidateQs.forEach(q => {
+      const gq = toGQ(hour, q);
+      const key = cellKey(day, gq);
+      const prevId = week.quarters[key];
+      if (prevId) {
+        const b = getBrushById(prevId);
+        if (b) lastColor = b.color;
+        cleanupOrphanEventLater(prevId);
+        delete week.quarters[key];
+        delete week.done[key];
+        delete week.checklists[key];
+        removedQs.push(q);
+      }
+    });
+    renderJar(day, hour);
+    if (playAnim && removedQs.length && lastColor) {
+      animateDrain(jarGrid[day][hour], hour, day, lastColor, removedQs[0], removedQs[removedQs.length - 1]);
+    }
+    return removedQs.length;
+  }
+
+  function clearWholeHour(day, hour, playAnim) {
+    const week = currentWeek();
+    let lastColor = null;
+    let any = false;
+    for (let q = 0; q < 4; q++) {
+      const gq = toGQ(hour, q);
+      const key = cellKey(day, gq);
+      const prevId = week.quarters[key];
+      if (prevId) {
+        any = true;
+        const b = getBrushById(prevId);
+        if (b) lastColor = b.color;
+        cleanupOrphanEventLater(prevId);
+        delete week.quarters[key];
+        delete week.done[key];
+        delete week.checklists[key];
+      }
+    }
+    renderJar(day, hour);
+    if (playAnim && any) animateDrain(jarGrid[day][hour], hour, day, lastColor || "#9ca3af", 0, 3);
+  }
+
+  // Finds the full contiguous run (same id, may cross hour boundaries) that a quarter belongs to.
+  function findContiguousRun(day, gq, id) {
+    const week = currentWeek();
+    let start = gq, end = gq;
+    while (start > 0 && week.quarters[cellKey(day, start - 1)] === id) start--;
+    while (end < QUARTERS_PER_DAY - 1 && week.quarters[cellKey(day, end + 1)] === id) end++;
+    return { start, end };
+  }
+
+  function toggleDoneQuarter(day, hour, q) {
+    const week = currentWeek();
+    const gq = toGQ(hour, q);
+    const key = cellKey(day, gq);
+    const id = week.quarters[key];
+    if (!id) return;
+
+    const run = findContiguousRun(day, gq, id);
+    const shouldMark = !week.done[key];
+    const hoursToRefresh = new Set();
+    for (let g = run.start; g <= run.end; g++) {
+      const k = cellKey(day, g);
+      if (shouldMark) week.done[k] = true;
+      else delete week.done[k];
+      hoursToRefresh.add(Math.floor(g / 4));
+    }
+    saveState();
+    hoursToRefresh.forEach(h => renderJar(day, h));
+  }
+
+  function toggleEraserBrush() {
+    if (activeThemeId !== ERASER_ID) {
+      savedBeforeEraser = activeThemeId;
+      activeThemeId = ERASER_ID;
+    } else if (savedBeforeEraser && getBrushById(savedBeforeEraser)) {
+      activeThemeId = savedBeforeEraser;
+      savedBeforeEraser = null;
+    } else {
+      activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+      savedBeforeEraser = null;
+    }
+    renderPalette();
+  }
+
+  // ---------- Grid interaction ----------
+  function attachGridEvents() {
+    const grid = document.getElementById("jarGrid");
+
+    grid.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      toggleEraserBrush();
+    });
+
+    grid.addEventListener("click", (e) => {
+      const label = e.target.closest(".hour-label");
+      if (!label) return;
+      const hour = Number(label.dataset.hour);
+      if (activeThemeId === EVENT_ID) { showToast("Selecciona un tema o proyecto para verter en toda la semana"); return; }
+      let count = 0;
+      for (let day = 0; day < DAYS.length; day++) {
+        if (pourIntoHour(day, hour, fillForward ? 0 : 3, activeThemeId, false) > 0) count++;
+      }
+      flushOrphanCleanup();
+      saveState();
+      renderStats();
+      renderProjects();
+      showToast(`${hourLabel(hour)} · ${pourAmount} min vertidos en ${count} días`);
+    });
+
+    grid.addEventListener("mousedown", (e) => {
+      const hit = e.target.closest(".quarter-hit");
+      if (!hit) return;
+      const day = Number(hit.dataset.day), hour = Number(hit.dataset.hour), q = Number(hit.dataset.quarter);
+
+      if (e.button === 1) {
+        e.preventDefault();
+        openChecklistModal(day, hour, q);
+        return;
+      }
+      if (e.button !== 0) return;
+
+      if (e.shiftKey) {
+        toggleDoneQuarter(day, hour, q);
+        return;
+      }
+
+      if (activeThemeId === ERASER_ID) {
+        if (overwriteMode) clearWholeHour(day, hour, true);
+        else eraseFromHour(day, hour, q, true);
+        flushOrphanCleanup();
+        saveState();
+        renderStats();
+        renderProjects();
+        renderEventsList();
+        return;
+      }
+
+      if (activeThemeId === EVENT_ID) {
+        e.preventDefault();
+        const key = day + "_" + toGQ(hour, q);
+        eventDragAdding = !eventSelection.has(key);
+        eventDragActive = true;
+        setQuarterSelected(day, hour, q, eventDragAdding);
+        return;
+      }
+
+      const filledCount = pourIntoHour(day, hour, q, activeThemeId, true);
+      flushOrphanCleanup();
+      saveState();
+      renderStats();
+      renderProjects();
+      if (!filledCount) showToast("Esos cuartos ya están ocupados (mantén Z para sobrescribir)");
+    });
+
+    grid.addEventListener("mouseover", (e) => {
+      if (!eventDragActive) return;
+      const hit = e.target.closest(".quarter-hit");
+      if (!hit) return;
+      const day = Number(hit.dataset.day), hour = Number(hit.dataset.hour), q = Number(hit.dataset.quarter);
+      setQuarterSelected(day, hour, q, eventDragAdding);
+    });
+
+    document.addEventListener("mouseup", () => { eventDragActive = false; });
+  }
+
+  // ---------- Event multi-quarter selection ----------
+  function setQuarterSelected(day, hour, q, selected) {
+    const key = day + "_" + toGQ(hour, q);
+    const hit = quarterHits[day][hour][q];
+    if (selected && !eventSelection.has(key)) {
+      eventSelection.set(key, { day, hour, q });
+      hit.classList.add("pending-event");
+    } else if (!selected && eventSelection.has(key)) {
+      eventSelection.delete(key);
+      hit.classList.remove("pending-event");
+    }
+    renderEventSelectionBar();
+  }
+
+  function clearEventSelection() {
+    eventSelection.forEach(({ day, hour, q }) => {
+      quarterHits[day][hour][q].classList.remove("pending-event");
+    });
+    eventSelection.clear();
+    renderEventSelectionBar();
+  }
+
+  function renderEventSelectionBar() {
+    const bar = document.getElementById("eventSelectionBar");
+    const info = document.getElementById("eventSelectionInfo");
+    if (!eventSelection.size) { bar.style.display = "none"; return; }
+    bar.style.display = "flex";
+    info.textContent = `${eventSelection.size} cuarto${eventSelection.size === 1 ? "" : "s"} seleccionado${eventSelection.size === 1 ? "" : "s"} (${eventSelection.size * 15} min)`;
+  }
+
+  document.getElementById("confirmEventSelectionBtn").addEventListener("click", () => {
+    if (!eventSelection.size) return;
+    openEventModal();
+  });
+  document.getElementById("cancelEventSelectionBtn").addEventListener("click", clearEventSelection);
+
+  // ---------- Event modal ----------
+  function openEventModal() {
+    const overlay = document.getElementById("eventOverlay");
+    document.getElementById("eventName").value = "";
+    overlay.classList.add("show");
+    setTimeout(() => document.getElementById("eventName").focus(), 50);
+  }
+  function cancelEventModal() {
+    document.getElementById("eventOverlay").classList.remove("show");
+  }
+  function confirmEventModal() {
+    const nameInput = document.getElementById("eventName");
+    const colorInput = document.getElementById("eventColor");
+    const name = nameInput.value.trim();
+    if (!name || !eventSelection.size) { nameInput.focus(); return; }
+    const eventId = "evt_" + uid();
+    const week = currentWeek();
+    week.events[eventId] = { name, color: colorInput.value };
+    const hoursToRefresh = new Map();
+    eventSelection.forEach(({ day, hour, q }) => {
+      const key = cellKey(day, toGQ(hour, q));
+      const prevId = week.quarters[key];
+      if (prevId && prevId !== eventId) cleanupOrphanEventLater(prevId);
+      week.quarters[key] = eventId;
+      delete week.done[key];
+      delete week.checklists[key];
+      quarterHits[day][hour][q].classList.remove("pending-event");
+      hoursToRefresh.set(day + "_" + hour, { day, hour });
+    });
+    const quarterCount = eventSelection.size;
+    eventSelection.clear();
+    flushOrphanCleanup();
+    hoursToRefresh.forEach(({ day, hour }) => renderJar(day, hour));
+    renderEventSelectionBar();
+    saveState();
+    document.getElementById("eventOverlay").classList.remove("show");
+    renderStats();
+    renderProjects();
+    renderEventsList();
+    showToast(`Evento "${name}" añadido (${quarterCount * 15} min)`);
+  }
+  document.getElementById("eventCancel").addEventListener("click", cancelEventModal);
+  document.getElementById("eventCreate").addEventListener("click", confirmEventModal);
+  document.getElementById("eventName").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") confirmEventModal();
+    if (e.key === "Escape") cancelEventModal();
+  });
+
+  // ---------- Q/E pour amount + Z overwrite + direction toggle ----------
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    const tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+    if (e.key === "q" || e.key === "Q") adjustPourAmount(-1);
+    else if (e.key === "e" || e.key === "E") adjustPourAmount(1);
+    else if (e.key === "z" || e.key === "Z") {
+      overwriteMode = true;
+      const wrap = document.querySelector(".jar-grid-wrap");
+      if (wrap) wrap.classList.add("overwrite-mode");
+    }
+  });
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "z" || e.key === "Z") {
+      overwriteMode = false;
+      const wrap = document.querySelector(".jar-grid-wrap");
+      if (wrap) wrap.classList.remove("overwrite-mode");
+    }
+  });
+  adjustPourAmount(0);
+
+  document.getElementById("fillDownBtn").addEventListener("click", () => {
+    fillForward = true;
+    document.getElementById("fillDownBtn").classList.add("active");
+    document.getElementById("fillUpBtn").classList.remove("active");
+  });
+  document.getElementById("fillUpBtn").addEventListener("click", () => {
+    fillForward = false;
+    document.getElementById("fillUpBtn").classList.add("active");
+    document.getElementById("fillDownBtn").classList.remove("active");
+  });
+
+  // ---------- Checklist (per quarter) ----------
+  function buildChecklistRow(item) {
+    const row = document.createElement("div");
+    row.className = "checklist-item" + (item.done ? " done" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = !!item.done;
+    const textInput = document.createElement("input");
+    textInput.type = "text"; textInput.value = item.text || "";
+    const delBtn = document.createElement("span");
+    delBtn.className = "del"; delBtn.title = "Eliminar item"; delBtn.textContent = "×";
+    row.append(cb, textInput, delBtn);
+    cb.addEventListener("change", () => {
+      item.done = cb.checked;
+      row.classList.toggle("done", item.done);
+      saveState();
+    });
+    textInput.addEventListener("input", () => { item.text = textInput.value; saveState(); });
+    delBtn.addEventListener("click", () => {
+      const items = getChecklist(currentChecklistKey);
+      const idx = items.findIndex(i => i.id === item.id);
+      if (idx !== -1) items.splice(idx, 1);
+      saveState();
+      row.remove();
+      if (!items.length) renderChecklistItems();
+      refreshChecklistHours();
+    });
+    return row;
+  }
+  function renderChecklistItems() {
+    const container = document.getElementById("checklistItems");
+    const items = getChecklist(currentChecklistKey);
+    if (!items.length) { container.innerHTML = '<p class="empty-stats">Sin items todavía.</p>'; return; }
+    container.innerHTML = "";
+    items.forEach(item => container.appendChild(buildChecklistRow(item)));
+  }
+  function openChecklistModal(day, hour, q) {
+    const gq = toGQ(hour, q);
+    const id = currentWeek().quarters[cellKey(day, gq)];
+    const run = id ? findContiguousRun(day, gq, id) : { start: gq, end: gq };
+    currentChecklistKey = cellKey(day, run.start);
+    currentChecklistDay = day;
+    currentChecklistRun = run;
+    const brush = id ? getBrushById(id) : null;
+    const rangeLabel = run.start === run.end ? quarterLabel(run.start) : `${quarterLabel(run.start)}–${quarterLabel(run.end + 1)}`;
+    document.getElementById("checklistTitle").textContent =
+      "📋 " + (brush ? brush.name : "Checklist") + " · " + DAYS[day] + " " + rangeLabel;
+    renderChecklistItems();
+    document.getElementById("checklistOverlay").classList.add("show");
+  }
+  function refreshChecklistHours() {
+    if (currentChecklistDay === null || !currentChecklistRun) return;
+    const startHour = Math.floor(currentChecklistRun.start / 4);
+    const endHour = Math.floor(currentChecklistRun.end / 4);
+    for (let h = startHour; h <= endHour; h++) renderJar(currentChecklistDay, h);
+  }
+  function closeChecklistModal() {
+    document.getElementById("checklistOverlay").classList.remove("show");
+    refreshChecklistHours();
+    currentChecklistKey = null;
+    currentChecklistDay = null;
+    currentChecklistRun = null;
+  }
+  document.getElementById("checklistAddItemBtn").addEventListener("click", () => {
+    const input = document.getElementById("checklistNewItem");
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    const items = getChecklist(currentChecklistKey);
+    const item = { id: uid(), text, done: false };
+    items.push(item);
+    saveState();
+    if (items.length === 1) renderChecklistItems();
+    else document.getElementById("checklistItems").appendChild(buildChecklistRow(item));
+    input.value = "";
+    input.focus();
+  });
+  document.getElementById("checklistNewItem").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("checklistAddItemBtn").click();
+    if (e.key === "Escape") closeChecklistModal();
+  });
+  document.getElementById("checklistCloseBtn").addEventListener("click", closeChecklistModal);
+
+  // ---------- Stats ----------
+  function computeDayStates() {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today - currentWeekMonday) / 86400000);
+    const states = [];
+    for (let day = 0; day < DAYS.length; day++) {
+      states.push(day === diffDays ? "today" : (day < diffDays ? "past" : "future"));
+    }
+    return states;
+  }
+
+  function getTodayInfo() {
+    const now = new Date();
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today - currentWeekMonday) / 86400000);
+    if (diffDays < 0 || diffDays > 6) return null;
+    const nowGQ = now.getHours() * 4 + Math.floor(now.getMinutes() / 15);
+    return { dayIndex: diffDays, nowGQ };
+  }
+
+  function renderStats() {
+    const summary = document.getElementById("statsSummary");
+    const list = document.getElementById("statsList");
+    const week = currentWeek();
+    const dayStates = computeDayStates();
+
+    const counts = {}; // quarter count per theme id
+    state.themes.forEach(t => counts[t.id] = 0);
+    let paintedQuarters = 0;
+    for (let day = 0; day < DAYS.length; day++) {
+      if (dayStates[day] === "past") continue;
+      for (let gq = 0; gq < QUARTERS_PER_DAY; gq++) {
+        const id = week.quarters[cellKey(day, gq)];
+        if (!id) continue;
+        paintedQuarters++;
+        if (counts[id] !== undefined) counts[id]++;
+      }
+    }
+    const activeDays = dayStates.filter(s => s !== "past").length;
+    const totalPainted = (paintedQuarters * 15) / 60;
+    const totalHours = activeDays * 24;
+    const free = totalHours - totalPainted;
+
+    summary.innerHTML = `
+      <div class="stat-pill"><span class="num">${totalHours}</span><span class="lbl">Horas totales</span></div>
+      <div class="stat-pill"><span class="num">${formatHours(totalPainted)}</span><span class="lbl">Planificadas</span></div>
+      <div class="stat-pill"><span class="num">${formatHours(free)}</span><span class="lbl">Libres</span></div>
+    `;
+
+    applyRowCollapsing();
+
+    if (!state.themes.length) {
+      list.innerHTML = '<p class="empty-stats">Crea un tema y vierte arena para ver estadísticas.</p>';
+      return;
+    }
+    const sorted = [...state.themes].sort((a, b) => counts[b.id] - counts[a.id]);
+    const maxQ = Math.max(1, ...sorted.map(t => counts[t.id]));
+    list.innerHTML = "";
+    sorted.forEach(theme => {
+      const hours = (counts[theme.id] * 15) / 60;
+      const row = document.createElement("div");
+      row.className = "stat-row";
+      row.innerHTML = `
+        <span class="stat-name"><span class="stat-dot" style="background:${theme.color}"></span>${escapeHtml(theme.name)}</span>
+        <span class="stat-bar-bg"><span class="stat-bar-fill" style="background:${theme.color}"></span></span>
+        <span class="stat-hours">${formatHours(hours)}h</span>
+      `;
+      list.appendChild(row);
+      const fill = row.querySelector(".stat-bar-fill");
+      requestAnimationFrame(() => { fill.style.width = Math.round((counts[theme.id] / maxQ) * 100) + "%"; });
+    });
+  }
+
+  // ---------- Projects ----------
+  function quartersForIdAllWeeks(id) {
+    let total = 0;
+    Object.values(state.weeks).forEach(w => {
+      Object.values(w.quarters).forEach(v => { if (v === id) total++; });
+    });
+    return total;
+  }
+
+  function renderProjects() {
+    const list = document.getElementById("projectsList");
+    if (!state.projects.length) {
+      list.innerHTML = '<p class="empty-stats">Crea un proyecto con una meta de horas para ver su progreso.</p>';
+      return;
+    }
+    list.innerHTML = "";
+    state.projects.forEach(project => {
+      const hours = (quartersForIdAllWeeks(project.id) * 15) / 60;
+      const target = project.targetHours || 1;
+      const pct = Math.min(100, Math.round((hours / target) * 100));
+      const row = document.createElement("div");
+      row.className = "stat-row";
+      row.innerHTML = `
+        <span class="stat-name"><span class="stat-dot" style="background:${project.color}"></span>${escapeHtml(project.name)}${hours >= target ? " ✅" : ""}</span>
+        <span class="stat-bar-bg"><span class="stat-bar-fill" style="background:${project.color}"></span></span>
+        <span class="stat-hours">${formatHours(hours)}/${target}h</span>
+        <span class="edit-color" title="Cambiar color">🖊️</span>
+        <span class="del" title="Eliminar proyecto">×</span>
+      `;
+      list.appendChild(row);
+      const fill = row.querySelector(".stat-bar-fill");
+      requestAnimationFrame(() => { fill.style.width = pct + "%"; });
+      row.querySelector(".edit-color").addEventListener("click", () => {
+        editColorFor(project, () => { renderPalette(); renderProjects(); renderAllJars(); });
+      });
+      row.querySelector(".del").addEventListener("click", async () => {
+        const ok = await showConfirm(`¿Eliminar el proyecto "${project.name}"? Se borrará de todos los cuartos donde aparezca.`);
+        if (!ok) return;
+        state.projects = state.projects.filter(p => p.id !== project.id);
+        removeIdFromAllWeeks(project.id);
+        if (activeThemeId === project.id) activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+        saveState();
+        renderPalette();
+        renderProjects();
+        renderAllJars();
+        renderStats();
+        showToast(`Proyecto "${project.name}" eliminado`);
+      });
+    });
+  }
+
+  // ---------- Events list ----------
+  function getEventOccurrences() {
+    const week = currentWeek();
+    const occurrences = [];
+    for (let day = 0; day < DAYS.length; day++) {
+      let currentId = null, start = null;
+      for (let gq = 0; gq <= QUARTERS_PER_DAY; gq++) {
+        const id = gq < QUARTERS_PER_DAY ? week.quarters[cellKey(day, gq)] : undefined;
+        const isEvent = !!(id && week.events[id]);
+        const same = isEvent && id === currentId;
+        if (!same) {
+          if (currentId !== null) occurrences.push({ day, start, end: gq, eventId: currentId });
+          currentId = isEvent ? id : null;
+          start = isEvent ? gq : null;
+        }
+      }
+    }
+    occurrences.sort((a, b) => a.day - b.day || a.start - b.start);
+    return occurrences;
+  }
+
+  function renderEventsList() {
+    const container = document.getElementById("eventsList");
+    const week = currentWeek();
+    const occurrences = getEventOccurrences();
+    if (!occurrences.length) {
+      container.innerHTML = '<p class="empty-stats">Usa el pincel "📌 Evento" para verter algo puntual (ej. ver una película).</p>';
+      return;
+    }
+    container.innerHTML = "";
+    occurrences.forEach(occ => {
+      const ev = week.events[occ.eventId];
+      if (!ev) return;
+      const row = document.createElement("div");
+      row.className = "stat-row";
+      row.innerHTML = `
+        <span class="stat-name"><span class="stat-dot" style="background:${ev.color}"></span>${escapeHtml(ev.name)}</span>
+        <span style="flex:1; font-size:12px; color:var(--text-muted);">${DAYS[occ.day]} ${quarterLabel(occ.start)}–${quarterLabel(occ.end)}</span>
+        <span class="edit-color" title="Cambiar color">🖊️</span>
+        <span class="del" title="Eliminar evento">×</span>
+      `;
+      container.appendChild(row);
+      row.querySelector(".edit-color").addEventListener("click", () => {
+        editColorFor(ev, () => { renderEventsList(); renderAllJars(); });
+      });
+      row.querySelector(".del").addEventListener("click", async () => {
+        const ok = await showConfirm(`¿Eliminar el evento "${ev.name}"?`);
+        if (!ok) return;
+        const hoursToRefresh = new Set();
+        for (let gq = occ.start; gq < occ.end; gq++) {
+          const k = cellKey(occ.day, gq);
+          if (week.quarters[k] === occ.eventId) {
+            delete week.quarters[k];
+            delete week.done[k];
+            delete week.checklists[k];
+          }
+          hoursToRefresh.add(Math.floor(gq / 4));
+        }
+        if (!isIdStillUsed(occ.eventId, week.quarters)) delete week.events[occ.eventId];
+        saveState();
+        hoursToRefresh.forEach(h => renderJar(occ.day, h));
+        renderStats();
+        renderProjects();
+        renderEventsList();
+        showToast(`Evento "${ev.name}" eliminado`);
+      });
+    });
+  }
+
+  // ---------- Theme / project creation ----------
+  function createTheme(name, color) {
+    const theme = { id: uid(), name, color };
+    state.themes.push(theme);
+    activeThemeId = theme.id;
+    saveState();
+    renderPalette();
+    renderStats();
+    showToast(`Tema "${theme.name}" añadido`);
+    return theme;
+  }
+  document.getElementById("addThemeBtn").addEventListener("click", () => {
+    const nameInput = document.getElementById("themeName");
+    const colorInput = document.getElementById("themeColor");
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    createTheme(name, colorInput.value);
+    nameInput.value = "";
+  });
+  document.getElementById("themeName").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("addThemeBtn").click();
+  });
+
+  document.getElementById("addProjectBtn").addEventListener("click", () => {
+    const nameInput = document.getElementById("projectName");
+    const colorInput = document.getElementById("projectColor");
+    const targetInput = document.getElementById("projectTarget");
+    const name = nameInput.value.trim();
+    const target = Math.max(1, parseFloat(targetInput.value) || 1);
+    if (!name) { nameInput.focus(); return; }
+    const project = { id: uid(), name, color: colorInput.value, targetHours: target };
+    state.projects.push(project);
+    activeThemeId = project.id;
+    saveState();
+    nameInput.value = "";
+    renderPalette();
+    renderProjects();
+    showToast(`Proyecto "${project.name}" creado`);
+  });
+  document.getElementById("projectName").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("addProjectBtn").click(); });
+  document.getElementById("projectTarget").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("addProjectBtn").click(); });
+
+  function openQuickThemeModal() {
+    const overlay = document.getElementById("quickThemeOverlay");
+    document.getElementById("quickThemeName").value = "";
+    overlay.classList.add("show");
+    setTimeout(() => document.getElementById("quickThemeName").focus(), 50);
+  }
+  function closeQuickThemeModal() { document.getElementById("quickThemeOverlay").classList.remove("show"); }
+  document.getElementById("quickThemeCancel").addEventListener("click", closeQuickThemeModal);
+  document.getElementById("quickThemeCreate").addEventListener("click", () => {
+    const nameInput = document.getElementById("quickThemeName");
+    const colorInput = document.getElementById("quickThemeColor");
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    createTheme(name, colorInput.value);
+    closeQuickThemeModal();
+  });
+  document.getElementById("quickThemeName").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("quickThemeCreate").click();
+    if (e.key === "Escape") closeQuickThemeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && !e.altKey && (e.key === "n" || e.key === "N")) {
+      e.preventDefault();
+      openQuickThemeModal();
+    }
+  });
+
+  // ---------- Clear all ----------
+  document.getElementById("clearAllBtn").addEventListener("click", async () => {
+    const ok = await showConfirm("¿Seguro que quieres vaciar todos los frascos de esta semana? Los temas se conservan.");
+    if (!ok) return;
+    const week = currentWeek();
+    week.quarters = {}; week.done = {}; week.events = {}; week.checklists = {};
+    saveState();
+    renderAllJars();
+    renderStats();
+    renderProjects();
+    renderEventsList();
+    showToast("Semana vaciada");
+  });
+
+  // ---------- Export / Import ----------
+  document.getElementById("exportJsonBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "horario.json"; a.click();
+    URL.revokeObjectURL(url);
+    showToast("Horario exportado");
+  });
+
+  document.getElementById("importJsonInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed.themes) throw new Error("Formato inválido");
+        state = normalizeState(parsed);
+        activeThemeId = state.themes.length ? state.themes[0].id : ERASER_ID;
+        currentWeekMonday = getMonday(new Date());
+        currentWeekKey = formatWeekKey(currentWeekMonday);
+        renderWeekLabel();
+        saveState();
+        renderPalette();
+        renderAllJars();
+        updateDayHighlights();
+        renderStats();
+        renderProjects();
+        renderEventsList();
+        renderNotes();
+        showToast("Horario importado");
+      } catch (err) {
+        showToast("Archivo inválido");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  document.getElementById("exportImageBtn").addEventListener("click", () => {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const hourColW = 60, cellW = 100, headerH = 34, cellH = 32;
+    const canvas = document.createElement("canvas");
+    canvas.width = hourColW + DAYS.length * cellW;
+    canvas.height = headerH + HOURS_PER_DAY * cellH;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = isDark ? "#1b1836" : "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = "bold 12px system-ui, Arial, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    DAYS.forEach((day, i) => {
+      const x = hourColW + i * cellW;
+      const grad = ctx.createLinearGradient(x, 0, x + cellW, headerH);
+      grad.addColorStop(0, DAY_COLORS[i][0]); grad.addColorStop(1, DAY_COLORS[i][1]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x + 2, 2, cellW - 4, headerH - 4);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(day, x + cellW / 2, headerH / 2);
+    });
+
+    const exportQuarters = currentWeek().quarters;
+    ctx.font = "8px system-ui, Arial, sans-serif";
+    for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
+      const y = headerH + hour * cellH;
+      ctx.fillStyle = isDark ? "#b7b5d6" : "#5b5f77";
+      ctx.textAlign = "right";
+      ctx.fillText(hourLabel(hour), hourColW - 8, y + cellH / 2);
+
+      DAYS.forEach((day, dayIdx) => {
+        const x = hourColW + dayIdx * cellW;
+        const quarterW = (cellW - 4) / 4;
+        let any = false;
+        for (let q = 0; q < 4; q++) {
+          const id = exportQuarters[cellKey(dayIdx, toGQ(hour, q))];
+          const brush = id ? getBrushById(id) : null;
+          const qx = x + 2 + q * quarterW;
+          if (brush) {
+            any = true;
+            ctx.fillStyle = brush.color;
+            ctx.fillRect(qx, y + 2, quarterW, cellH - 4);
+            ctx.fillStyle = textColorFor(brush.color);
+            ctx.textAlign = "center";
+            ctx.font = "bold 6px system-ui, Arial, sans-serif";
+            ctx.fillText(getCellLabel(brush.name), qx + quarterW / 2, y + cellH / 2);
+            ctx.font = "8px system-ui, Arial, sans-serif";
+          }
+        }
+        if (!any) {
+          ctx.fillStyle = isDark ? "#2a2750" : "#f1f1f6";
+          ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4);
+        }
+      });
+    }
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "horario.png"; a.click();
+      URL.revokeObjectURL(url);
+      showToast("Imagen descargada");
+    });
+  });
+
+  // ---------- Uniform hour band collapsing ----------
+  function computeUniformBands() {
+    const week = currentWeek();
+    const bands = [];
+    let bandStart = null, bandValue = null;
+    for (let hour = 0; hour <= HOURS_PER_DAY; hour++) {
+      let uniformId = null;
+      if (hour < HOURS_PER_DAY) {
+        const q0key = cellKey(0, toGQ(hour, 0));
+        const id = week.quarters[q0key];
+        if (id) {
+          let allSame = true;
+          for (let day = 0; day < DAYS.length && allSame; day++) {
+            for (let q = 0; q < 4; q++) {
+              if (week.quarters[cellKey(day, toGQ(hour, q))] !== id) { allSame = false; break; }
+            }
+          }
+          if (allSame) uniformId = id;
+        }
+      }
+      if (uniformId !== null && uniformId === bandValue) {
+        // extend
+      } else {
+        if (bandStart !== null && bandValue !== null && hour - bandStart >= 2) bands.push({ start: bandStart, end: hour, value: bandValue });
+        bandStart = uniformId !== null ? hour : null;
+        bandValue = uniformId;
+      }
+    }
+    return bands;
+  }
+
+  function applyRowCollapsing() {
+    const grid = document.getElementById("jarGrid");
+    if (!grid) return;
+    grid.querySelectorAll(".band-summary").forEach(el => el.remove());
+    rowGroups.forEach(row => row.forEach(el => { if (el) el.style.display = ""; }));
+    if (viewGranularity !== "week") return;
+
+    const bands = computeUniformBands();
+    bands.forEach(band => {
+      const bandKey = currentWeekKey + "_" + band.start;
+      const isExpanded = !!state.expandedBands[bandKey];
+      const anchor = rowGroups[band.start] && rowGroups[band.start][0];
+      if (!anchor) return;
+
+      const brush = getBrushById(band.value);
+      const rangeLabel = `${hourLabel(band.start)}–${hourLabel(band.end)}`;
+      const summary = document.createElement("div");
+      summary.className = "band-summary";
+      const arrow = document.createElement("div");
+      arrow.className = "band-arrow";
+      arrow.textContent = isExpanded ? "▼" : "▶";
+      const text = document.createElement("div");
+      text.className = "band-text";
+      const label = brush ? `${brush.name} · ${rangeLabel}` : rangeLabel;
+      text.textContent = isExpanded ? `${label} (clic para colapsar)` : label;
+      if (brush) { text.style.background = brush.color; text.style.color = textColorFor(brush.color); }
+      summary.appendChild(arrow);
+      summary.appendChild(text);
+      summary.addEventListener("click", () => {
+        if (isExpanded) delete state.expandedBands[bandKey];
+        else state.expandedBands[bandKey] = true;
+        saveState();
+        applyRowCollapsing();
+      });
+      grid.insertBefore(summary, anchor);
+
+      if (!isExpanded) {
+        for (let h = band.start; h < band.end; h++) {
+          if (rowGroups[h]) rowGroups[h].forEach(el => { if (el) el.style.display = "none"; });
+        }
+      }
+    });
+  }
+
+  // ---------- Day highlight / week nav ----------
+  function updateDayHighlights() {
+    const states = computeDayStates();
+    for (let day = 0; day < DAYS.length; day++) {
+      const dh = dayHeaderCells[day];
+      if (dh) dh.classList.toggle("day-today", states[day] === "today");
+      (jarGrid[day] || []).forEach(jar => { if (jar) jar.classList.toggle("day-past", states[day] === "past"); });
+    }
+  }
+
+  function renderWeekLabel() {
+    const el = document.getElementById("weekLabel");
+    if (viewGranularity === "day") {
+      el.textContent = DAYS[getDayIndexInWeek(currentDayDate)] + " " + currentDayDate.getDate() + " " + MONTH_NAMES[currentDayDate.getMonth()] + " " + currentDayDate.getFullYear();
+    } else if (viewGranularity === "month") {
+      el.textContent = MONTH_NAMES_FULL[currentMonthDate.getMonth()] + " " + currentMonthDate.getFullYear();
+    } else {
+      el.textContent = formatWeekLabel(currentWeekMonday);
+    }
+  }
+
+  function updateColumnVisibility() {
+    const dayIndex = viewGranularity === "day" ? getDayIndexInWeek(currentDayDate) : null;
+    dayHeaderCells.forEach((dh, i) => { dh.style.display = (dayIndex !== null && i !== dayIndex) ? "none" : ""; });
+    rowGroups.forEach(row => {
+      if (!row) return;
+      DAYS.forEach((_, i) => {
+        const jar = row[i + 1];
+        if (jar) jar.style.display = (dayIndex !== null && i !== dayIndex) ? "none" : "";
+      });
+    });
+  }
+
+  function goToWeek(monday) {
+    currentWeekMonday = monday;
+    currentWeekKey = formatWeekKey(monday);
+    renderWeekLabel();
+    updateDayHighlights();
+    renderAllJars();
+    renderStats();
+    renderProjects();
+    renderEventsList();
+    if (document.getElementById("gymView").style.display !== "none") renderGymView();
+  }
+
+  function goToDay(date) {
+    currentDayDate = new Date(date); currentDayDate.setHours(0, 0, 0, 0);
+    const monday = getMonday(currentDayDate);
+    currentWeekMonday = monday;
+    currentWeekKey = formatWeekKey(monday);
+    renderWeekLabel();
+    updateDayHighlights();
+    updateColumnVisibility();
+    renderAllJars();
+    renderStats();
+    renderProjects();
+    renderEventsList();
+  }
+
+  function renderMonthGrid() {
+    renderWeekLabel();
+    const container = document.getElementById("monthGrid");
+    container.innerHTML = "";
+    ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].forEach(name => {
+      const h = document.createElement("div");
+      h.className = "month-day-header"; h.textContent = name;
+      container.appendChild(h);
+    });
+    const firstOfMonth = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth(), 1);
+    const gridStart = getMonday(firstOfMonth);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 42; i++) {
+      const date = addDaysToDate(gridStart, i);
+      const cell = document.createElement("div");
+      cell.className = "month-day-cell";
+      if (date.getMonth() !== currentMonthDate.getMonth()) cell.classList.add("other-month");
+      if (date.getTime() === today.getTime()) cell.classList.add("is-today");
+      if (date.getTime() < today.getTime()) cell.classList.add("is-past");
+      cell.textContent = date.getDate();
+      cell.addEventListener("click", () => { setGranularity("day"); goToDay(date); });
+      container.appendChild(cell);
+    }
+  }
+
+  function setGranularity(mode) {
+    viewGranularity = mode;
+    document.getElementById("viewMonthBtn").classList.toggle("active", mode === "month");
+    document.getElementById("viewWeekBtn").classList.toggle("active", mode === "week");
+    document.getElementById("viewDayBtn").classList.toggle("active", mode === "day");
+    document.querySelector(".jar-grid-wrap").style.display = mode === "month" ? "none" : "";
+    document.getElementById("monthViewCard").style.display = mode === "month" ? "" : "none";
+    document.getElementById("carryThemesBtn").style.display = mode === "week" ? "" : "none";
+    document.getElementById("clearDayBtn").style.display = mode === "day" ? "" : "none";
+    updateColumnVisibility();
+    renderWeekLabel();
+    if (mode === "week") applyRowCollapsing();
+  }
+  document.getElementById("viewWeekBtn").addEventListener("click", () => { setGranularity("week"); goToWeek(currentWeekMonday); });
+  document.getElementById("viewDayBtn").addEventListener("click", () => { setGranularity("day"); goToDay(currentDayDate); });
+  document.getElementById("viewMonthBtn").addEventListener("click", () => { setGranularity("month"); renderMonthGrid(); });
+
+  document.getElementById("prevWeekBtn").addEventListener("click", () => {
+    if (viewGranularity === "day") goToDay(addDaysToDate(currentDayDate, -1));
+    else if (viewGranularity === "month") { currentMonthDate = addMonths(currentMonthDate, -1); renderMonthGrid(); }
+    else goToWeek(addDaysToDate(currentWeekMonday, -7));
+  });
+  document.getElementById("nextWeekBtn").addEventListener("click", () => {
+    if (viewGranularity === "day") goToDay(addDaysToDate(currentDayDate, 1));
+    else if (viewGranularity === "month") { currentMonthDate = addMonths(currentMonthDate, 1); renderMonthGrid(); }
+    else goToWeek(addDaysToDate(currentWeekMonday, 7));
+  });
+  document.getElementById("todayWeekBtn").addEventListener("click", () => {
+    if (viewGranularity === "day") goToDay(new Date());
+    else if (viewGranularity === "month") { currentMonthDate = new Date(); currentMonthDate.setDate(1); currentMonthDate.setHours(0,0,0,0); renderMonthGrid(); }
+    else goToWeek(getMonday(new Date()));
+  });
+
+  document.getElementById("carryThemesBtn").addEventListener("click", async () => {
+    const ok = await showConfirm("¿Pasar los temas y proyectos vertidos esta semana a la semana siguiente? Los eventos puntuales no se copian.");
+    if (!ok) return;
+    const nextKey = formatWeekKey(addDaysToDate(currentWeekMonday, 7));
+    const nextData = getWeekData(nextKey);
+    const cw = currentWeek();
+    let count = 0;
+    Object.keys(cw.quarters).forEach(key => {
+      const id = cw.quarters[key];
+      if (state.themes.some(t => t.id === id) || state.projects.some(p => p.id === id)) {
+        nextData.quarters[key] = id;
+        count++;
+      }
+    });
+    saveState();
+    showToast(count ? `${count} cuartos pasados a la semana siguiente` : "No había temas ni proyectos que pasar");
+  });
+
+  document.getElementById("clearDayBtn").addEventListener("click", async () => {
+    const dayIndex = getDayIndexInWeek(currentDayDate);
+    const ok = await showConfirm(`¿Vaciar todos los frascos de ${DAYS[dayIndex]}?`);
+    if (!ok) return;
+    for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
+      setTimeout(() => clearWholeHour(dayIndex, hour, true), hour * 45);
+    }
+    setTimeout(() => {
+      saveState();
+      renderStats();
+      renderProjects();
+      renderEventsList();
+      showToast(`${DAYS[dayIndex]} vaciado`);
+    }, HOURS_PER_DAY * 45 + 700);
+  });
+
+  // ---------- View switcher (Horario/Gym) ----------
+  function switchView(view) {
+    const isGym = view === "gym";
+    document.getElementById("horarioView").style.display = isGym ? "none" : "";
+    document.getElementById("gymView").style.display = isGym ? "" : "none";
+    document.getElementById("viewHorarioBtn").classList.toggle("active", !isGym);
+    document.getElementById("viewGymBtn").classList.toggle("active", isGym);
+    if (isGym) renderGymView();
+  }
+  document.getElementById("viewHorarioBtn").addEventListener("click", () => switchView("horario"));
+  document.getElementById("viewGymBtn").addEventListener("click", () => switchView("gym"));
+
+  // ---------- Gym sessions ----------
+  function getGymSessions() {
+    const week = currentWeek();
+    const sessions = [];
+    for (let day = 0; day < DAYS.length; day++) {
+      let start = null;
+      for (let gq = 0; gq <= QUARTERS_PER_DAY; gq++) {
+        const id = gq < QUARTERS_PER_DAY ? week.quarters[cellKey(day, gq)] : null;
+        const brush = id ? getBrushById(id) : null;
+        const isGym = !!(brush && brush.name.trim().toLowerCase() === "gym");
+        if (isGym && start === null) start = gq;
+        if (!isGym && start !== null) { sessions.push({ day, start, end: gq }); start = null; }
+      }
+    }
+    return sessions;
+  }
+
+  function updateSessionProgress(sessionKey) {
+    const bar = document.querySelector(`.gym-progress[data-session="${sessionKey}"]`);
+    if (!bar) return;
+    const exercises = state.gymRoutines[sessionKey] || [];
+    const pct = exercises.length ? Math.round((exercises.filter(e => e.done).length / exercises.length) * 100) : 0;
+    bar.style.width = pct + "%";
+  }
+
+  function buildExerciseRow(sessionKey, ex) {
+    const row = document.createElement("div");
+    row.className = "exercise-row" + (ex.done ? " done" : "");
+    const doneCb = document.createElement("input"); doneCb.type = "checkbox"; doneCb.checked = !!ex.done;
+    const nameInput = document.createElement("input"); nameInput.type = "text"; nameInput.className = "ex-name"; nameInput.placeholder = "Ejercicio"; nameInput.value = ex.name || "";
+    const seriesInput = document.createElement("input"); seriesInput.type = "text"; seriesInput.className = "ex-series"; seriesInput.placeholder = "Series"; seriesInput.value = ex.series || "";
+    const repsInput = document.createElement("input"); repsInput.type = "text"; repsInput.className = "ex-reps"; repsInput.placeholder = "Reps"; repsInput.value = ex.reps || "";
+    const weightInput = document.createElement("input"); weightInput.type = "text"; weightInput.className = "ex-weight"; weightInput.placeholder = "Kg"; weightInput.value = ex.weight || "";
+    const notesInput = document.createElement("input"); notesInput.type = "text"; notesInput.className = "ex-notes"; notesInput.placeholder = "Notas"; notesInput.value = ex.notes || "";
+    const delBtn = document.createElement("span"); delBtn.className = "del"; delBtn.title = "Eliminar ejercicio"; delBtn.textContent = "×";
+    row.append(doneCb, nameInput, seriesInput, repsInput, weightInput, notesInput, delBtn);
+    doneCb.addEventListener("change", () => { ex.done = doneCb.checked; row.classList.toggle("done", ex.done); saveState(); updateSessionProgress(sessionKey); });
+    nameInput.addEventListener("input", () => { ex.name = nameInput.value; saveState(); });
+    seriesInput.addEventListener("input", () => { ex.series = seriesInput.value; saveState(); });
+    repsInput.addEventListener("input", () => { ex.reps = repsInput.value; saveState(); });
+    weightInput.addEventListener("input", () => { ex.weight = weightInput.value; saveState(); });
+    notesInput.addEventListener("input", () => { ex.notes = notesInput.value; saveState(); });
+    delBtn.addEventListener("click", () => {
+      const arr = state.gymRoutines[sessionKey];
+      const idx = arr.findIndex(e => e.id === ex.id);
+      if (idx !== -1) arr.splice(idx, 1);
+      saveState(); row.remove(); updateSessionProgress(sessionKey);
+    });
+    return row;
+  }
+
+  function renderGymView() {
+    const container = document.getElementById("gymSessions");
+    const sessions = getGymSessions();
+    if (!sessions.length) {
+      container.innerHTML = '<p class="empty-stats">Vierte arena "Gym" en el Horario para que aparezcan aquí tus sesiones.</p>';
+      return;
+    }
+    container.innerHTML = "";
+    sessions.forEach(session => {
+      const sessionKey = session.day + "_" + session.start;
+      if (!state.gymRoutines[sessionKey]) state.gymRoutines[sessionKey] = [];
+      const exercises = state.gymRoutines[sessionKey];
+      const pct = exercises.length ? Math.round((exercises.filter(e => e.done).length / exercises.length) * 100) : 0;
+      const card = document.createElement("div");
+      card.className = "card gym-session";
+      card.innerHTML = `
+        <p class="section-title">🏋️ ${DAYS[session.day]} · ${quarterLabel(session.start)}–${quarterLabel(session.end)}</p>
+        <div class="stat-bar-bg" style="margin-bottom:14px;"><span class="stat-bar-fill gym-progress" data-session="${sessionKey}" style="background:linear-gradient(135deg,#34d399,#10b981);"></span></div>
+      `;
+      const list = document.createElement("div"); list.className = "exercise-list";
+      exercises.forEach(ex => list.appendChild(buildExerciseRow(sessionKey, ex)));
+      card.appendChild(list);
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn-add add-exercise-btn"; addBtn.textContent = "+ Añadir ejercicio";
+      addBtn.addEventListener("click", () => {
+        const ex = { id: uid(), name: "", series: "", reps: "", weight: "", done: false, notes: "" };
+        state.gymRoutines[sessionKey].push(ex);
+        saveState();
+        list.appendChild(buildExerciseRow(sessionKey, ex));
+        updateSessionProgress(sessionKey);
+      });
+      card.appendChild(addBtn);
+      container.appendChild(card);
+      const fill = card.querySelector(".gym-progress");
+      requestAnimationFrame(() => { fill.style.width = pct + "%"; });
+    });
+  }
+
+  // ---------- Init ----------
+  renderWeekLabel();
+  buildGrid();
+  updateDayHighlights();
+  updateColumnVisibility();
+  renderPalette();
+  renderAllJars();
+  renderStats();
+  renderProjects();
+  renderEventsList();
+  renderNotes();
+  attachGridEvents();
+  applyMobileReadOnly();
+  window.addEventListener("resize", applyMobileReadOnly);
+  initRemoteSync();
+
+  setInterval(() => {
+    const info = getTodayInfo();
+    if (!info) return;
+    for (let hour = 0; hour < HOURS_PER_DAY; hour++) renderJar(info.dayIndex, hour);
+  }, 60000);
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

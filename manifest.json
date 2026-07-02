@@ -1,0 +1,12 @@
+{
+  "name": "Horario semanal - Arena de temas",
+  "short_name": "Horario",
+  "start_url": "./horario.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#302b63",
+  "theme_color": "#7c3aed",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
