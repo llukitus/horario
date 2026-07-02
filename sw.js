@@ -1,5 +1,5 @@
 const CACHE_NAME = "horario-cache-v1";
-const FILES_TO_CACHE = ["./horario.html", "./manifest.json", "./icon.svg"];
+const FILES_TO_CACHE = ["./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -1,7 +1,7 @@
 {
   "name": "Horario semanal - Arena de temas",
   "short_name": "Horario",
-  "start_url": "./horario.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#302b63",
